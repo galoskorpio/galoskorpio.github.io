@@ -146,11 +146,11 @@
             if (data.encontrado) {
                 const socio = data.socio;
                 // Estandarizar estados para evitar errores de mayúsculas/minúsculas
-                if (socio.estado.toLowerCase().includes('vigente')) {
-                    resultBox.classList.add('vigente');
-                    resultBox.innerHTML = `<h3>✓ SOCIO VIGENTE</h3><p><strong>${socio.nombre}</strong></p><p>Tiene acceso a todos los descuentos.</p>`;
+                if (socio.estado.toLowerCase().includes('Activo')) {
+                    resultBox.classList.add('Activo');
+                    resultBox.innerHTML = `<h3>✓ SOCIO ACTIVO</h3><p><strong>${socio.nombre}</strong></p><p>Tiene acceso a todos los descuentos.</p>`;
                 } else {
-                    resultBox.classList.add('inactivo');
+                    resultBox.classList.add('Inactivo');
                     resultBox.innerHTML = `<h3>✕ SOCIO INACTIVO</h3><p><strong>${socio.nombre}</strong></p><p>No habilitado para convenios actuales.</p>`;
                 }
             } else {
