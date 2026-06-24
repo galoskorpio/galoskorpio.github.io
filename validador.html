@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validador de Convenios - Asociación</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 5px;
+        }
+        p.subtitle {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #34495e;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus {
+            border-color: #2980b9;
+            outline: none;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: #2980b9;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover { background-color: #2171a3; }
+        
+        /* Estilos de los resultados */
+        .result-box {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .vigente {
+            background-color: #e8f8f5;
+            border: 2px solid #2ecc71;
+            color: #117a65;
+        }
+        .inactivo {
+            background-color: #fdedec;
+            border: 2px solid #e74c3c;
+            color: #943126;
+        }
+        .no-encontrado {
+            background-color: #fef9e7;
+            border: 2px solid #f1c40f;
+            color: #7d6608;
+        }
+        .result-box h3 { margin: 0 0 5px 0; font-size: 20px; }
+        .result-box p { margin: 0; font-size: 14px; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Validador de Socios</h2>
+    <p class="subtitle">Consulte la vigencia para aplicar descuento</p>
+    
+    <div class="form-group">
+        <label for="rutInput">Ingrese RUT del Asociado</label>
+        <input type="text" id="rutInput" placeholder="Ej: 12345678-9" autocomplete="off">
+    </div>
+    
+    <button onclick="validarSocio()">Verificar Estado</button>
+    
+    <div id="resultado" class="result-box"></div>
+</div>
+
+<script>
+    // ¡MUY IMPORTANTE! Reemplaza el texto entre las comillas simples con tu URL de Google Apps Script
+    const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbxuDKMYRcKL-g2TFRRdn1J3pHJyyXL1m19tMZVGEekK-9T2pt5WOY3Gqed5X4zCJVY/exec';
+
+    async function validarSocio() {
+        const rut = document.getElementById('rutInput').value.trim();
+        const resultBox = document.getElementById('resultado');
+        
+        if (!rut) {
+            alert("Por favor, ingrese un RUT.");
+            return;
+        }
+
+        resultBox.style.display = 'none';
+        resultBox.className = 'result-box';
+        resultBox.innerHTML = '<p>Buscando en el sistema...</p>';
+        resultBox.style.display = 'block';
+
+        try {
+            // Hacemos la consulta al script de Google Sheets pasando el RUT por la URL
+            const response = await fetch(`${URL_SCRIPT}?rut=${encodeURIComponent(rut)}`);
+            const data = await response.json();
+
+            if (data.encontrado) {
+                const socio = data.socio;
+                // Estandarizar estados para evitar errores de mayúsculas/minúsculas
+                if (socio.estado.toLowerCase().includes('vigente')) {
+                    resultBox.classList.add('vigente');
+                    resultBox.innerHTML = `<h3>✓ SOCIO VIGENTE</h3><p><strong>${socio.nombre}</strong></p><p>Tiene acceso a todos los descuentos.</p>`;
+                } else {
+                    resultBox.classList.add('inactivo');
+                    resultBox.innerHTML = `<h3>✕ SOCIO INACTIVO</h3><p><strong>${socio.nombre}</strong></p><p>No habilitado para convenios actuales.</p>`;
+                }
+            } else {
+                resultBox.classList.add('no-encontrado');
+                resultBox.innerHTML = `<h3>⚠ NO ENCONTRADO</h3><p>El RUT ingresado no figura en los registros de la asociación.</p>`;
+            }
+
+        } catch (error) {
+            console.error(error);
+            resultBox.className = 'result-box inactivo';
+            resultBox.innerHTML = `<h3>Error de Conexión</h3><p>No se pudo conectar con el servidor central.</p>`;
+        }
+    }
+
+    // Permitir buscar presionando la tecla "Enter"
+    document.getElementById('rutInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            validarSocio();
+        }
+    });
+
+    // EJECUTAR BÚSQUEDA AUTOMÁTICA SI SE ESCANEA UN CÓDIGO QR
+    window.onload = function() {
+        const parametrosURL = new URLSearchParams(window.location.search);
+        const rutDesdeQR = parametrosURL.get('rut');
+        
+        if (rutDesdeQR) {
+            // Escribir el RUT en la cajita automáticamente
+            document.getElementById('rutInput').value = rutDesdeQR;
+            // Presionar el botón automáticamente
+            validarSocio();
+        }
+    };
+</script>
+
+</body>
+</html>
