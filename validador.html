@@ -72,7 +72,7 @@
         }
         button:hover { background-color: #2171a3; }
         
-        /* Estilos de los resultados */
+        /* Estilos de los cuadros de resultado */
         .result-box {
             margin-top: 25px;
             padding: 20px;
@@ -121,8 +121,8 @@
 </div>
 
 <script>
-    // ¡MUY IMPORTANTE! Reemplaza el texto entre las comillas simples con tu URL de Google Apps Script
-    const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbxuDKMYRcKL-g2TFRRdn1J3pHJyyXL1m19tMZVGEekK-9T2pt5WOY3Gqed5X4zCJVY/exec';
+    // ¡REEMPLAZA ESTO! Pega tu URL larga de Google Apps Script entre las comillas simples
+    const URL_SCRIPT = 'AQUÍ_PEGA_TU_URL_DE_IMPLEMENTACION_DEL_PASO_2';
 
     async function validarSocio() {
         const rut = document.getElementById('rutInput').value.trim();
@@ -133,28 +133,31 @@
             return;
         }
 
+        // Resetear el estado visual mientras busca
         resultBox.style.display = 'none';
         resultBox.className = 'result-box';
         resultBox.innerHTML = '<p>Buscando en el sistema...</p>';
         resultBox.style.display = 'block';
 
         try {
-            // Hacemos la consulta al script de Google Sheets pasando el RUT por la URL
+            // Consulta en tiempo real al servidor de Google Sheets
             const response = await fetch(`${URL_SCRIPT}?rut=${encodeURIComponent(rut)}`);
             const data = await response.json();
 
             if (data.encontrado) {
                 const socio = data.socio;
-                // Estandarizar estados para evitar errores de mayúsculas/minúsculas
-                if (socio.estado.toLowerCase().includes('Activo')) {
-                    resultBox.classList.add('Activo');
-                    resultBox.innerHTML = `<h3>✓ SOCIO ACTIVO</h3><p><strong>${socio.nombre}</strong></p><p>Tiene acceso a todos los descuentos.</p>`;
+                const estadoLimpio = socio.estado.toLowerCase().trim();
+
+                // Valida si el estado contiene la palabra 'activo' o 'vigente'
+                if (estadoLimpio.includes('activo') || estadoLimpio.includes('vigente')) {
+                    resultBox.className = 'result-box vigente';
+                    resultBox.innerHTML = `<h3>✓ SOCIO ACTIVO</h3><p><strong>${socio.nombre}</strong></p><p>Tiene acceso a todos los descuentos y convenios.</p>`;
                 } else {
-                    resultBox.classList.add('Inactivo');
+                    resultBox.className = 'result-box inactivo';
                     resultBox.innerHTML = `<h3>✕ SOCIO INACTIVO</h3><p><strong>${socio.nombre}</strong></p><p>No habilitado para convenios actuales.</p>`;
                 }
             } else {
-                resultBox.classList.add('no-encontrado');
+                resultBox.className = 'result-box no-encontrado';
                 resultBox.innerHTML = `<h3>⚠ NO ENCONTRADO</h3><p>El RUT ingresado no figura en los registros de la asociación.</p>`;
             }
 
@@ -165,22 +168,22 @@
         }
     }
 
-    // Permitir buscar presionando la tecla "Enter"
+    // Permite buscar directamente al presionar la tecla "Enter" en el teclado
     document.getElementById('rutInput').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             validarSocio();
         }
     });
 
-    // EJECUTAR BÚSQUEDA AUTOMÁTICA SI SE ESCANEA UN CÓDIGO QR
+    // CAPTURA AUTOMÁTICA DEL RUT DESDE EL CÓDIGO QR
     window.onload = function() {
         const parametrosURL = new URLSearchParams(window.location.search);
         const rutDesdeQR = parametrosURL.get('rut');
         
         if (rutDesdeQR) {
-            // Escribir el RUT en la cajita automáticamente
+            // Rellena el campo de texto con el RUT del código QR
             document.getElementById('rutInput').value = rutDesdeQR;
-            // Presionar el botón automáticamente
+            // Llama inmediatamente a la función de búsqueda
             validarSocio();
         }
     };
